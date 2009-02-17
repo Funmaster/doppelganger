@@ -1,4 +1,4 @@
-var httpServer="http://10.0.1.103:80"
+var httpServer="http://141.116.116.93:80"
 
 function init_captive_js()
 {
