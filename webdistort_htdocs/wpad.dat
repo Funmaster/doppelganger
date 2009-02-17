@@ -1,9 +1,0 @@
-function FindProxyForURL(url, host)
-{
-	var proxyUrl = "PROXY 141.116.116.93:8080";
-	var nonProxyUrl = "DIRECT";
-
-	return proxyUrl;
-
-	return nonProxyUrl;
-}
