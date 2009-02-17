@@ -1,0 +1,9 @@
+function FindProxyForURL(url, host)
+{
+	var proxyUrl = "PROXY 10.0.1.103:8080";
+	var nonProxyUrl = "DIRECT";
+
+	return proxyUrl;
+
+	return nonProxyUrl;
+}
