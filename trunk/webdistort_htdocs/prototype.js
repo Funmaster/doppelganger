@@ -1,1 +1,1 @@
-/home/ed/Desktop/webdistort/trunk/webdistort_htdocs/prototype-1.6.0.3.js
+./prototype-1.6.0.3.js
