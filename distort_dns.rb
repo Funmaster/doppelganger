@@ -28,9 +28,11 @@ class WebDistort
 
 			begin
 				response = dns_resolver.send_message(dns_update)
-				print 'WPAD address created'
+				puts 'WPAD address created'
+        return true
 				rescue Exception => e
-					print 'Error: ' + e
+					puts 'Error: ' + e
+          return false
 			end
 		end
 
