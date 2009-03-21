@@ -5,15 +5,11 @@ require "rubygems"
 require "dnsruby"
 require "optparse"
 require "socket"
-require "webrick"
-require "webrick/httpproxy"
-require "webrick/httputils"
+require "webrick_override"
 require "pp"
 
 class WebDistort
-  
-  
-  
+ 
   class Proxy
     @server_ip = ''
     
@@ -26,7 +22,6 @@ class WebDistort
     @data_dir = Dir::pwd + '/saved'
     
     @options = nil
-    
     
     def modify_body (body)
 			prototype_file = "http://" + @server_ip + ":" + @http_port.to_s + "/prototype.js"
@@ -68,9 +63,6 @@ class WebDistort
     end
     
     def handle_contents(request, response)
-	if request.host =~ /google.com/
-		return response.body;
-	end
 	puts request.host;
 
       if response.content_type =~/text/ || response.content_type =~/javascript/
@@ -98,21 +90,17 @@ class WebDistort
       access_logger = [[access_log_file, WEBrick::AccessLog::COMBINED_LOG_FORMAT]]
       
       
-      proxy = WEBrick::HTTPProxyServer.new(
+      proxy = WebDistortProxy.new(
                                            :Logger => proxy_logger,
                                            :AccessLog => access_logger,
                                            :Port => @proxy_port,
-                                           :RequestCallback => Proc.new{|req,res| 
-        if req.request_method == "CONNECT" 
-          # Handle SSL connections
-        end
-        req.header.delete('accept-encoding') },
-      :ProxyContentHandler => lambda {|request, response|
-        response.body = handle_contents(request, response)})
+                                           :RequestCallback => Proc.new{|req,res|
+																			        req.header.delete('accept-encoding') },
+																						:ProxyContentHandler => lambda {|request, response|
+																				        response.body = handle_contents(request, response)})
       
-      ['INT', 'TERM', 'KILL'].each {|signal|
-        trap(signal) { proxy.shutdown ; access_log_file.close }
-      }
+
+
       proxy.start
     end
   end

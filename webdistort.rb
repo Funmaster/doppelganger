@@ -89,18 +89,27 @@ dns = WebDistort::DNS.new(options['domain'], options['primary_dns'], options['se
 
 if options['run_mode'] == 'proxy'  
   proxy = WebDistort::Proxy.new(options)
-  $proxy_pid = fork do
+  $proxy_pid = Process.fork do
+	   ['INT', 'TERM', 'KILL'].each {|signal|
+        Signal.trap(signal) { puts "Shutting down proxy" ; proxy.shutdown }
+      }
+
     proxy.start    
   end
   puts"Starting WebDistort Proxy: PID=" + $proxy_pid.to_s 
 end
 
 httpd = WebDistort::HTTP.new(options)
-$httpd_pid = fork do
+$httpd_pid = Process.fork do
+	['INT', 'TERM', 'KILL'].each {|signal|
+              Signal.trap(signal) { puts "Shutting down HTTPd server" ; httpd.shutdown }
+	}
+
   httpd.setup_files
   httpd.start
 end
 puts "Starting WebDistort HTTPD Server: PID=" + $httpd_pid.to_s
+
 
 puts "Attempting to update WPAD record"
 if dns.update == false
@@ -109,8 +118,10 @@ end
 
 
           ['INT', 'TERM', 'KILL'].each {|signal|
-              trap(signal) { Process.kill signal $proxy_pid; Process.kill signal $httpd_pid }
-          }
-
+              trap(signal) { 
+								Process.kill(signal, $httpd_pid)
+								Process.kill(signal, $proxy_pid)
+							}
+					}			
 
 Process.wait
