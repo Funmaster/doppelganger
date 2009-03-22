@@ -3,13 +3,12 @@
 require "webrick"
 require "webrick/httpproxy"
 require "webrick/httputils"
-require "doppleganger"
+require "doppelganger"
 
 class WebDistortProxy < WEBrick::HTTPProxyServer
 	alias old_proxy_connect proxy_connect
 	def proxy_connect(req, res)
-		req.createDoppleganger
-	
+		req.createDoppelganger	
 		old_proxy_connect(req, res)
 	end
 end
@@ -18,14 +17,14 @@ $server_mapping = nil
 
 
 class WEBrick::HTTPRequest
-	def createDoppleganger
+	def createDoppelganger
 		if $server_mapping == nil
 			$server_mapping = Hash.new()
 		end
 
 		if $server_mapping[@unparsed_uri] == nil
 			host, port = @unparsed_uri.split(":", 2)
-			d = Doppleganger.new(:Server => host)	 
+			d = Doppelganger.new(:Server => host)	 
 			server_info =	d.start
 			$server_mapping[@unparsed_uri] = server_info
 			puts "-" * 70
