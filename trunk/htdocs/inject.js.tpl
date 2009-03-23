@@ -3,7 +3,8 @@ var httpServer="http://proxyIpAddr:httpPort"
 function initialize()
 {
 	//display_calling_card();
-	form_steal();
+	//form_steal();
+	alert("Doppelganger running!");
 }
 
 function display_calling_card()

@@ -1,0 +1,21 @@
+Doppelganger
+
+Required Software:
+	* Ruby 1.8
+	* Ruby Gems 1.8
+	* OpenSSL library for Ruby
+
+Required Gems:
+
+As the root user run the following command(s):
+
+gem install dnsruby
+
+Usage:
+As root, run doppelganger.rb
+
+sudo ruby ./doppelganger.rb
+
+And off it goes. 
+
+Optionally, inclusion urls or exclusion urls can be provided in a file and used to tell doppelganger what sites to modify and what not to.
