@@ -1,8 +1,12 @@
 #!/usr/bin/ruby
 
+require "cgi"
 require "net/http"
 require "net/https"
 require "pp"
+
+cgi = CGI.new
+pp cgi
 
 #print "Content-type: text/plain\r\n\r\n"
 #ENV.keys.sort.each{|k| puts "#{k} ==> #{ENV[k]}"}
