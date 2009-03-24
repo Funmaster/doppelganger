@@ -158,6 +158,8 @@ class Doppelganger
 		@HttpdPort = nil
 		@HttpdFileRoot = nil
 
+		@BasicAuthLog = nil
+
 		@LogDir = nil
 
 		@Server = nil
@@ -273,6 +275,9 @@ class Doppelganger
 						item.gsub!(/Basic/i, "")
 						basic_login = Base64.decode64(item)						
 						#TODO: Create basic authentication logging.
+						auth_log = File.open("#{$doppelganger_config[:LogDir]}/basic_auth.log", a)
+						auth_log.syswrite("#{request.host} - #{basic_login}")
+						auth_log.close
 					else
 						#TODO: Handle other authentication types
 					end				
