@@ -168,8 +168,10 @@ class Doppelganger
 
 		@RandomNum = 0
 
+		@GoogleScript = nil
+		@GoogleScriptVer = nil
+
 		def initialize(config)
-			# Javascript get loaded in reverse order (LIFO)
 			@InjectionScripts = Array["jquery.js", "utility.js", "inject.js"]
 			@PackedScripts = {}
 			@FakeServerFiles = ["/doppelganger"]
@@ -181,12 +183,15 @@ class Doppelganger
 			@RandomNum = rand(max_unsigned);
 
 			@ProxyAddr = config[:ProxyAddr]
-			@ProxyPort = config[:ProxyPort]
+			@ProxyPort = config[:ProxyPort]			
 			@ProxyInclusionFile = config[:ProxyInclusionFile]
 			@ProxyExclusionFile = config[:ProxyExclusionFile]
 			@ProxyExclusionList = nil
 			@ProxyInclusionList = nil
 			@ProxyPid = nil
+
+			@GoogleScript = config[:AJAXLibrary]
+			@GoogleScriptVer = config[:AJAXLibraryVersion]
 
 			@HttpdFileRoot = config[:HttpdFileRoot]
 
@@ -327,6 +332,12 @@ class Doppelganger
 			if perform_transformation && response.content_type =~ /text/i
 					server_url = "http://" + @HttpdAddr + ":" + @HttpdPort.to_s				
 					#server_url = "#{uri.scheme}://#{uri.host}:#{uri.port}/"
+
+					if @GoogleScript != nil and @GoogleScriptVer != nil
+						googleLoadString = '<script>google.load("#{@GoogleScript}", "#{@GoogleScriptVer}");</script>'
+						javascriptInject = '<head><script src="http://www.google.com/jsapi"></script>#{googleLoadString}'
+						puts javascriptInject
+					end
 
 					@InjectionScripts.reverse_each { |script|									
 						packed_code = @PackedScripts[script]	
@@ -615,5 +626,7 @@ program = Doppelganger.new(
 	:HttpdPort => 80,
 	:HttpdFileRoot => "./htdocs/",
 	:ProxyPort => 8080,
-	:LogDir => "./logs/"
+	:LogDir => "./logs/",
+	:GoogleScript => "jquery",
+	:GoogleScriptVer => "1.3.2"
 )
