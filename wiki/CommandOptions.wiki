@@ -4,23 +4,23 @@
 
 == Server Options ==
 
-*-w [PORT], --webport [PORT]*
+*-w {{{[PORT]}}}, --webport {{{[PORT]}}}*
 
 Configures the Doppelganger HTTP Server to listen on the specified port. If no port is provided, port 80 is used as a default.
 
-*-p [PORT], --proxyport [PORT]*
+*-p {{{[PORT]}}}, --proxyport {{{[PORT]}}}*
 
 Configures the Doppelganger Proxy Server to listen on the specified port. If not port is provided, port 8080 is used as a default.
 
-*--domain [DOMAIN]*
+*--domain {{{[DOMAIN]}}}*
 
 The domain used to create a WPAD entry.
 
-*--nameserver [ADDRESS]*
+*--nameserver {{{[ADDRESS]}}}*
 
 The name server of the specified domain.
 
-*--wpadhost [ADDRESS]*
+*--wpadhost {{{<ADDRESS>}}}*
 
 Specify the IP of the wpad host to be entered into DNS. If no address is given Doppelganger will attempt to determine the IP address of the current host.
 
@@ -28,26 +28,26 @@ Specify the IP of the wpad host to be entered into DNS. If no address is given D
 
 Each of the options below loads the respective Javascript Library & version from Google APIs into modified pages. For more information see [http://code.google.com/apis/ajaxlibs/documentation/index.html#AjaxLibraries]
 
-*--jquery [VERSION]*
+*--jquery {{{[VERSION]}}}*
 
-*--jqueryui [VERSION]*
+*--jqueryui {{{[VERSION]}}}*
 
-*--prototype [VERSION]*
+*--prototype {{{[VERSION]}}}*
 
-*--scriptaculous [VERSION]*
+*--scriptaculous {{{[VERSION]}}}*
 
-*--mootools [VERSION]*
+*--mootools {{{[VERSION]}}}*
 
-*--dojo [VERSION]*
+*--dojo {{{[VERSION]}}}*
 
-*--swfobject [VERSION]*
+*--swfobject {{{[VERSION]}}}*
 
-*--yui [VERSION]*
+*--yui {{{[VERSION]}}}*
 
-*--extcore [VERSION]*
+*--extcore {{{[VERSION]}}}*
 
 == Javascript Options ==
 
-*-j [file1,file2...fileN] , --javascript [file1,file2...fileN]*
+*-j {{{[file1,file2...fileN]}}} , --javascript {{{[file1,file2...fileN]}}}*
 
 Accepts a list of custom Javascript files to be loaded from the Doppelganger HTTP server. List must be a comma delimited list with no spaces. Files can be Javascript files or [Template] files.
