@@ -379,7 +379,9 @@ class Doppelganger
 					javascriptInject = "<head><script src='http://www.google.com/jsapi'></script>#{googleLoadString}"
 					if response.body != nil
 						response.body.gsub!(/<head>/i) {|block| javascriptInject}
-					end 					return response.body
+					end
+
+ 					return response.body
 			else
 				return response.body				
 			end
