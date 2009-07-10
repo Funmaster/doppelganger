@@ -51,3 +51,12 @@ Each of the options below loads the respective Javascript Library & version from
 *-j {{{[file1,file2...fileN]}}} , --javascript {{{[file1,file2...fileN]}}}*
 
 Accepts a list of custom Javascript files to be loaded from the Doppelganger HTTP server. List must be a comma delimited list with no spaces. Files can be Javascript files or [Template] files.
+
+== Misc. Options ==
+*-e {{{[FILE]}}}, --exlude*
+
+File containing list of URLs to excluded when mimicing. If this option or the include option is omitted, all URLs will be mimiced.
+
+*-i {{{[FILE}}}}, --include*
+
+File containling list of URLs to be mimiced. If this option or the exclude option is omitted, all URLs will be mimiced.
