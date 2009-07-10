@@ -19,3 +19,7 @@ sudo ruby ./doppelganger.rb
 And off it goes. 
 
 Optionally, inclusion urls or exclusion urls can be provided in a file and used to tell doppelganger what sites to modify and what not to.
+
+For more information, please visit: http://doppelganger.googlecode.com
+
+
