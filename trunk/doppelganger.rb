@@ -42,6 +42,7 @@ class Doppelganger
 	@LogDir = nil
 
 	def initialize(config)
+		$doppelganger_config = config
 		@config = config
 
 		puts "Starting Doppelganger"
@@ -393,7 +394,7 @@ class Doppelganger
      			access_log_file = File.open(@LogDir + "/proxy_access.log", "a")
       			access_logger = [[access_log_file, WEBrick::AccessLog::COMBINED_LOG_FORMAT]]      
       
-      @Server = WebDistortProxy.new(
+      @Server = DoppelgangerProxy.new(
 				:Logger => proxy_logger,
 				:AccessLog => access_logger,
 				:Port => @ProxyPort,
@@ -435,7 +436,7 @@ class Doppelganger
 		def initialize(config)
 			@Templates = Array["wpad.dat.tpl", "inject.js.tpl"]
 
-			$doppelganer_config[:CustomJavascript].each
+			#$doppelganger_config[:CustomJavascript].each
 
 			@ProxyAddr = config[:ProxyAddr]
 			@ProxyPort = config[:ProxyPort]
@@ -565,7 +566,7 @@ class Doppelganger
 	end
 end
 
-class WebDistortProxy < WEBrick::HTTPProxyServer
+class DoppelgangerProxy < WEBrick::HTTPProxyServer
 	alias old_proxy_connect proxy_connect
 	def proxy_connect(req, res)
 #		req.createDoppelganger	
@@ -693,6 +694,14 @@ optionParser = OptionParser.new do |opts|
 		options[:ProxyPort] = p
 	end
 
+	opts.on("-e", "--exclude [FILE]", String, "File listing web sites to exclude from mimicing.") do |e|
+		options[:ProxyExclusionFile] = e
+	end
+
+	opts.on("i", "--include [FILE]", String, "File listing web sites to mimic.") do |i|
+		options[:ProxyInclusionFile] = i
+	end
+
 	opts.separator ""
 	opts.separator "DNS Options"
 	opts.separator ""
@@ -759,6 +768,6 @@ optionParser = OptionParser.new do |opts|
 
 end.parse!
 
-pp options
+#pp options
 
-#program = Doppelganger.new(options)
+program = Doppelganger.new(options)
