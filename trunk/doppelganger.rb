@@ -167,7 +167,7 @@ class Doppelganger
 	end
 
 	class Proxy
-		@InjectionScripts = Array[]
+		@InjectionScripts = nil
 		@PackedScripts = nil
 		@FakeServerFiles = nil
 
@@ -191,6 +191,7 @@ class Doppelganger
 		@RandomNum = 0
 
 		def initialize(config)				
+			@InjectionScripts = Array.new
 			$doppelganger_config[:CustomJavascript].each { |file|				
 				puts "Adding custom JS file: #{file}"
 				if file =~ /.tpl/
