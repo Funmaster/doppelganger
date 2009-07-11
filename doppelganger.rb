@@ -167,7 +167,7 @@ class Doppelganger
 	end
 
 	class Proxy
-		@InjectionScripts = nil
+		@InjectionScripts = Array[]
 		@PackedScripts = nil
 		@FakeServerFiles = nil
 
@@ -190,12 +190,11 @@ class Doppelganger
 
 		@RandomNum = 0
 
-		def initialize(config)
-			@InjectionScripts = Array["utility.js"]
-			
-			$doppelganger_config[:CustomJavascript].each { |file|
+		def initialize(config)				
+			$doppelganger_config[:CustomJavascript].each { |file|				
+				puts "Adding custom JS file: #{file}"
 				if file =~ /.tpl/
-					@InjectionScripts.push(file.gsub(/.tpl/))
+					@InjectionScripts.push(file.gsub!(/.tpl/, ""))
 				else
 					@InjectionScripts.push(file)
 				end
@@ -708,7 +707,7 @@ options[:HttpdFileRoot] = "./htdocs/"
 options[:ProxyPort] = 8080
 options[:LogDir] = "./logs/"
 options[:JQueryVersion] = "1.3.2"
-options[:CustomJavascript] = Array["inject.js.tpl"]
+options[:CustomJavascript] = Array["utility.js", "inject.js.tpl"]
 
 optionParser = OptionParser.new do |opts|
 	opts.banner = "Usage: webdistort.rb [options]"
