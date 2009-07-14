@@ -52,6 +52,10 @@ Each of the options below loads the respective Javascript Library & version from
 
 Accepts a list of custom Javascript files to be loaded from the Doppelganger HTTP server. List must be a comma delimited list with no spaces. Files can be Javascript files or [Template] files.
 
+*-s, --pack*
+
+Packs the custom scripts and includes them in the page inline, instead of referring to them by URL.
+
 == Misc. Options ==
 *-e {{{[FILE]}}}, --exlude*
 
