@@ -39,6 +39,10 @@ require "rubygems"
 require "dnsruby"
 require "packr"
 
+if RUBY_PLATFORM =~ /mswin32/
+  require "win32/process"
+end
+
 $eviltwin_mapping = nil
 $eviltwins = []
 
@@ -447,6 +451,7 @@ class Doppelganger
 		end
 	
 		def Shutdown
+			puts "Shutting down proxy..."
 		end
 	end
 
