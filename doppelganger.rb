@@ -367,7 +367,13 @@ class Doppelganger
 						packed_code = @PackedScripts[script]	
 						script_url = "#{server_url}/#{script}"
 
-						html = "<head><script src=\"#{script_url}\" language=\"javascript\" type=\"text/javascript\"></script>"
+						html = ""
+
+						if !$doppelganger_config[:PackScripts]
+							html = "<head><script src=\"#{script_url}\" language=\"javascript\" type=\"text/javascript\"></script>"
+						else
+							html = "<head><script language=\"javascript\" type=\"text/javascript\">#{packed_code}</script>";
+						end
 						if response.body != nil
 							response.body.gsub!(/<head>/i) {|block| html}							
 						end
@@ -714,6 +720,7 @@ options[:ProxyPort] = 8080
 options[:LogDir] = "./logs/"
 options[:JQueryVersion] = "1.3.2"
 options[:CustomJavascript] = Array["utility.js", "inject.js.tpl"]
+options[:PackScripts] = false
 
 optionParser = OptionParser.new do |opts|
 	opts.banner = "Usage: webdistort.rb [options]"
@@ -768,6 +775,10 @@ optionParser = OptionParser.new do |opts|
 	opts.separator ""
 	opts.separator "Javascript Options"
 	opts.separator ""
+
+	opts.on("-s", "--pack", "Pack custom scripts and place inline.") do |s|
+		options[:PackScripts] = true
+	end
 
 	opts.on("-j", "--javascript file1,file2", Array, "List of custom javascript (as templates) to import (required)") do |files|
 		options[:CustomJavascript] = files
