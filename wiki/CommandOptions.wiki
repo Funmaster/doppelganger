@@ -1,4 +1,5 @@
 #summary Doppelganger options
+#labels Featured
 
 = Doppelganger Options =
 
