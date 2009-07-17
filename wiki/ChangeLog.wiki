@@ -1,0 +1,7 @@
+#summary Changelog for doppelganger
+#labels Featured
+
+= Changelog =
+
+== 0.1 ==
+  * Initial Release
