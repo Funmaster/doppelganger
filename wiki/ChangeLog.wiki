@@ -3,5 +3,8 @@
 
 = Changelog =
 
+== 0.1a ==
+  * Actually added call to UpdateDNS when the WPAD options are specified.
+
 == 0.1 ==
   * Initial Release
