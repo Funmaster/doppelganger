@@ -93,6 +93,10 @@ class Doppelganger
 			Dir.mkdir(@LogDir)
 		end
 
+		if config[:TargetDomain]
+			@Program.UpdateDNS
+		end
+
 		@ProxyAddr = @HttpdAddr = @Program.GetIPAddress
 		config[:HttpdAddr] = @HttpdAddr
 		config[:ProxyAddr] = @ProxyAddr
@@ -106,7 +110,7 @@ class Doppelganger
 
 		@ProxyServer = Doppelganger::Proxy.new(config)
 		@ProxyServer.Start
-		
+
 		Process.wait
 
 		$eviltwins.each {|twin| 
@@ -565,7 +569,7 @@ class Doppelganger
 	end
 
 	class Program	
-		def initialize(config)					
+		def initialize(config)	
 		end
 
 		def GetIPAddress
@@ -589,7 +593,7 @@ class Doppelganger
 			target_name_server = $doppelganger_config[:TargetNameServer]
 			target_wpad_host = $doppelganger_config[:TargetWpadHost]
 
-			if target_wpad_host == auto
+			if target_wpad_host == 'auto'
 				target_wpad_host = GetIPAddress
 			end
 			
