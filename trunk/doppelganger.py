@@ -23,16 +23,11 @@ class DoppelProxyClient(ProxyClient):
 		ProxyClient.handleResponsePart(self, buffer)
 		
 	def handleResponseEnd(self):
-		if not self._finished:
-		
-		'''self.father.responseHeaders.setRawHeaders("content-length", [len(self.test)])
+		if not self.father._finished:
+			self.father.responseHeaders.setRawHeaders("content-length", [len(self.test)])
+			self.father.write(self.buffer)
 	
-		
-		data = gzip.GzipFile(fileobj = cStringIO.StringIO(self.buffer)).read()
-		print data
-	'''
-	
-	print self.father.data
+		print self.data
 		
 		ProxyClient.handleResponseEnd(self)
 		
